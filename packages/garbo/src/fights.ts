@@ -2323,17 +2323,32 @@ const itemStealZones = [
 ] as ItemStealZone[];
 
 function getBestItemStealZone(mappingMonster = false): ItemStealZone | null {
-  const targets = itemStealZones.filter(
-    (zone) =>
-      zone.isOpen() &&
-      (mappingMonster || !zone.requireMapTheMonsters) &&
-      asArray(zone.monster).some(
+  const targets = itemStealZones.filter((zone) => {
+    print(`ALERT FOR NEIL: Now considering zone ${zone.location}`);
+    if (!zone.isOpen()) {
+      print(`${zone.location} is not open`);
+      return false;
+    }
+
+    if (!mappingMonster && zone.requireMapTheMonsters) {
+      print(`${zone.location} requires a map that we aren't using`);
+      return false;
+    }
+
+    if (
+      !asArray(zone.monster).some(
         (m) =>
           !isBanished(m) ||
           get("olfactedMonster") === m ||
           get("_gallapagosMonster") === m,
-      ),
-  );
+      )
+    ) {
+      print(`${zone.location} has all good monsters banished and unsniff't!`);
+      return false;
+    }
+    print(`${zone.location} gets it in!`);
+    return true;
+  });
   const vorticesAvail = have($item`industrial fire extinguisher`)
     ? Math.floor(get("_fireExtinguisherCharge") / 10)
     : 0;
@@ -2347,7 +2362,9 @@ function getBestItemStealZone(mappingMonster = false): ItemStealZone | null {
       zone.openCost()
     );
   };
-  return targets.length ? maxBy(targets, value) : null;
+  const result = targets.length ? maxBy(targets, value) : null;
+  print(`ALERT FOR NEIL: we have chosen ${result?.location ?? "null"}`);
+  return result;
 }
 
 function setupItemStealZones() {
